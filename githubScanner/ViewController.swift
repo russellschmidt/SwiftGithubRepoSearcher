@@ -103,9 +103,45 @@ class ViewController: UIViewController, UITableViewDataSource, UITableViewDelega
   */
 
   @IBAction func search(sender: AnyObject) {
-    let userQuery = self.searchTextBox.text
+    var userQuery = self.searchTextBox.text
+    var charArray = [Character]()
+    // "learn+swift+language:swift&sort=stars&order=desc"
+    // swap blank spaces for +
+    // deal with the :swift
+    // deal with the &sort=stars&order=desc --- though you might just keep that and tack it on at the end
 
-    
+    for character in userQuery {
+      if character == " " {
+        charArray.append("+")
+      } else {
+        charArray.append(character)
+      }
+    }
+
+    userQuery = String(charArray)
+
+    query = userQuery
+    let githubQueryURL = "https://api.github.com/search/repositories?q="
+    let queryString = githubQueryURL+query!
+    let repositoryQueryURL = NSURL(string: "\(queryString)")
+
+    // clear out the entries from the last search
+    repositories.removeAll(keepCapacity: false)
+
+    // 2 submit the query and save the data to a variable
+    if let JSONData = NSData(contentsOfURL: repositoryQueryURL!) { // note the bang
+      // 3 if we made a connection, unwrap the data into a Dictionary
+      if let json = NSJSONSerialization.JSONObjectWithData(JSONData, options: nil, error: nil) as? NSDictionary {
+        // 4 we need to go one level deeper to an array of dictionaries in the data
+        if let repositoryArray = json["items"] as? [NSDictionary] {
+          // 5 loop over the array, instantiating the Repository object for each and adding to the repositories array
+          for item in repositoryArray {
+            repositories.append(Repository(json: item))
+          }
+        }
+      }
+    }
+    self.myTableView.reloadData()
   }
 
 
